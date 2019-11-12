@@ -1,0 +1,11 @@
+{
+  "name": "koha-critical-bugs-alerter",
+  "version": "1.0.0",
+  "description": "Utility to alert us to changes in critical bugs via the Koha community bugzilla",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bywatersolutions/koha-critical-bugs-alerter.git"
+  },
+  "author": "Kyle M Hall",
+  "license": "GPL-3.0",
+}

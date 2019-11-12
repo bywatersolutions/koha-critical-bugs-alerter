@@ -1,0 +1,2 @@
+#!/bin/bash
+docker pull kylemhall/dev-koha-critical-bugs-alerter && docker run --rm --env-file ~/.koha-critical-bugs-alerter.env kylemhall/dev-koha-critical-bugs-alerter /app/koha-critical-bugs-alerter.pl "$@"

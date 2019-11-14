@@ -5,7 +5,7 @@ WORKDIR /app
 # Copy all files to workdir
 COPY . .
 
-RUN cpanm --installdeps . 
+RUN cpanm --notest --installdeps .
 
 RUN apt-get -y update \
     && apt-get -y install \

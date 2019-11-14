@@ -7,6 +7,7 @@ requires 'JSON';
 requires 'LWP::UserAgent';
 requires 'Modern::Perl';
 requires 'Mozilla::CA';
+requires 'Template';
 requires 'Term::ANSIColor';
 requires 'Try::Tiny';
 requires 'WebService::Mailgun';

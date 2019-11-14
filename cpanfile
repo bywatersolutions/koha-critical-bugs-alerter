@@ -11,3 +11,4 @@ requires 'Template';
 requires 'Term::ANSIColor';
 requires 'Try::Tiny';
 requires 'WebService::Mailgun';
+requires 'LWP::Protocol::https';

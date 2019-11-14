@@ -7,4 +7,10 @@ COPY . .
 
 RUN cpanm --installdeps . 
 
+RUN apt-get -y update \
+    && apt-get -y install \
+       tidy \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/lib/api/lists/*
+
 CMD ./koha-critical-bugs-alerter.pl -v

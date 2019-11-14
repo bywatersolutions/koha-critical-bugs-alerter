@@ -5,17 +5,31 @@ use Modern::Perl;
 use Carp::Always;
 use Data::Dumper;
 use DateTime;
+use File::Slurp;
 use Getopt::Long::Descriptive;
 use JSON qw(to_json from_json);
 use LWP::UserAgent;
+use Template;
 use Term::ANSIColor;
 use Try::Tiny;
+use WebService::Mailgun;
+
+my $tt = Template->new({
+    INCLUDE_PATH => '.',
+    INTERPOLATE  => 1,
+}) || die "$Template::ERROR\n";
 
 my ( $opt, $usage ) = describe_options(
     'tracker-updater.pl',
     [ "community-url=s", "Community tracker URL", { required => 1, default => $ENV{KOHA_URL} } ],
     [],
-    [ 'slack|s=s', "Slack webhook URL", { required => 1, default => $ENV{KCBA_SLACK_URL} } ],
+    [ 'slack|s=s', "Slack webhook URL", { required => 0, default => $ENV{KCBA_SLACK_URL} } ],
+    [],
+    [ 'mailgun-api-key|mak=s', "Mailgun API key", { required => 0, default => $ENV{MAILGUN_API_KEY} } ],
+    [ 'mailgun-api-domain|mad=s', "Mailgun API domain", { required => 0, default => $ENV{MAILGUN_API_DOMAIN} } ],
+    [],
+    [ 'email-to|to|t=s', "Address to send email to", { required => 0, default => $ENV{EMAIL_TO} } ],
+    [ 'email-from|from|f=s', "Address from send email from", { required => 0, default => $ENV{EMAIL_FROM} } ],
     [],
     [ 'verbose|v+', "Print extra stuff", { required => 1, default => 0 } ],
     [ 'help|h', "Print usage message and exit", { shortcircuit => 1 } ],
@@ -51,6 +65,7 @@ say colored( "Today: $today", "cyan" ) if $opt->verbose > 1;
 say colored( "Yesterday: $yesterday", "cyan" ) if $opt->verbose > 1;
 say colored( "25 Hours Ago: $last_24hrs", "cyan" ) if $opt->verbose > 1;
 
+my @bugs_to_keep;
 for my $s (qw( critical blocker )) {
     for my $d ( $today, $yesterday ) {
         my $url      = "$bz_koha_url/rest/bug?severity=$s&last_change_time=$d";
@@ -61,7 +76,7 @@ for my $s (qw( critical blocker )) {
         my @bugs = @{ $json->{bugs} };
         next unless @bugs;
 
-        for my $bug (@bugs) {
+        foreach my $bug (@bugs) {
             say colored( "Looking at bug $bug->{id}.", 'yellow' )
               if $opt->verbose > 1;
 
@@ -73,12 +88,15 @@ for my $s (qw( critical blocker )) {
 
                 my @history = @{$json->{bugs}->[0]->{history}};
                 my @slack_fields;
+                my @history_to_keep;
                 foreach my $h (@history) {
                     if ( $h->{when} ge $last_24hrs ) {
+
+                        my @changes_to_keep;
                         foreach my $c ( @{ $h->{changes} } ) {
                             next if $c->{field_name} eq 'cc';
-                            next
-                              if $c->{field_name} eq 'attachments.isobsolete';
+                            next if $c->{field_name} eq 'attachments.isobsolete';
+                            next if $c->{field_name} eq 'keywords';
 
                             my $cli_msg;
                             my $slack_msg;
@@ -100,9 +118,16 @@ for my $s (qw( critical blocker )) {
 
                             say Data::Dumper::Dumper($c) if $opt->verbose > 2;
                             say colored( $cli_msg, "white" );
+                            push( @changes_to_keep, $c );
                         }
+
+                        $h->{changes} = \@changes_to_keep;
+                        push( @history_to_keep, $h );
                     }
                 }
+
+                $bug->{history} = \@history_to_keep;
+                push( @bugs_to_keep, $bug );
 
                 my $json_data = {
                     "attachments" => [
@@ -124,6 +149,42 @@ for my $s (qw( critical blocker )) {
             }
         }
     }
+}
+
+if (   $opt->mailgun_api_key
+    && $opt->mailgun_api_domain
+    && $opt->email_to
+    && $opt->email_from )
+{
+    say colored("Sending email!", 'cyan') if $opt->verbose > 1;
+
+    my $vars = {
+        bugs        => \@bugs_to_keep,
+        bz_koha_url => $bz_koha_url,
+    };
+
+    $tt->process( 'email.tt', $vars, 'email.html' )
+      || die $tt->error(), "\n";
+    qx{ tidy -o email.html email.html };
+    my $html = read_file('email.html');
+
+    my $mailgun = WebService::Mailgun->new(
+        api_key => $opt->mailgun_api_key,
+        domain  => $opt->mailgun_api_domain,
+    );
+
+    # send mail
+    my $ymd = DateTime->now()->ymd();
+    my $res = $mailgun->message(
+        {
+            from    => $opt->email_to,
+            to      => $opt->email_from,
+            subject => "Changes to Critical Koha Bugs ( $ymd )",
+            html    => $html,
+        }
+    );
+
+    say colored("Email sent!", 'cyan') if $opt->verbose > 1;
 }
 
 $ua->post(

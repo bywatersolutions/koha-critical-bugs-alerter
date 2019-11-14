@@ -1,6 +1,7 @@
 requires 'Carp::Always';
 requires 'Data::Dumper';
 requires 'DateTime';
+requires 'File::Slurp';
 requires 'Getopt::Long::Descriptive';
 requires 'JSON';
 requires 'LWP::UserAgent';
@@ -8,3 +9,4 @@ requires 'Modern::Perl';
 requires 'Mozilla::CA';
 requires 'Term::ANSIColor';
 requires 'Try::Tiny';
+requires 'WebService::Mailgun';

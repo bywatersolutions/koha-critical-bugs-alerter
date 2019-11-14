@@ -1,0 +1,32 @@
+[%- USE Dumper -%]
+<h1>Critical Bugs Changed In The Past 24 Hours</h1>
+
+[% FOREACH b IN bugs -%]
+    [% IF b.history -%]
+        [% FOREACH h IN b.history -%]
+            [% SET h_loop = loop -%]
+            [% IF h.changes.size -%]
+                    [% FOREACH c IN h.changes -%]
+                        [% SET c_loop = loop %]
+                        [% IF h_loop.first && c_loop.first -%]
+                            [% SET last_bug_printed = b.id -%]
+                            <h3><a href="[% bz_koha_url %]/show_bug.cgi?id=[% b.id %]">Bug [% b.id %]: [% b.summary %]</a></h3>
+                            <p>
+                        [% END -%]
+
+                        [% IF c.removed && c.added -%]
+                            [% h.who %] changed [% c.field_name %] from [% c.removed %] to [% c.added %]<br/>
+                        [% ELSIF c.removed -%]
+                            [% h.who %] removed [% c.removed %] from [% c.field_name %]<br/>
+                        [% ELSE -%]
+                            [% h.who %] added [% c.added %] to [% c.field_name %]<br/>
+                        [% END -%]
+
+                        [% IF h_loop.last && c_loop.last -%]
+                            </p>
+                        [% END -%]
+                    [% END -%]
+            [% END -%]
+        [% END -%]
+    [% END -%]
+[% END -%]

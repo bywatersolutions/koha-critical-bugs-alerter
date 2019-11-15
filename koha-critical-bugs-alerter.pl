@@ -181,8 +181,8 @@ if (   $opt->mailgun_api_key
     my $ymd = DateTime->now()->ymd();
     my $res = $mailgun->message(
         {
-            from    => $opt->email_to,
-            to      => $opt->email_from,
+            from    => $opt->email_from,
+            to      => $opt->email_to,
             subject => "Changes to Critical Koha Bugs ( $ymd )",
             html    => $html,
         }

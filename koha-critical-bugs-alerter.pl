@@ -65,6 +65,7 @@ say colored( "Today: $today", "cyan" ) if $opt->verbose > 1;
 say colored( "Yesterday: $yesterday", "cyan" ) if $opt->verbose > 1;
 say colored( "25 Hours Ago: $last_24hrs", "cyan" ) if $opt->verbose > 1;
 
+my $bugs_seen = {};
 my @bugs_to_keep;
 for my $s (qw( critical blocker )) {
     for my $d ( $today, $yesterday ) {
@@ -77,6 +78,8 @@ for my $s (qw( critical blocker )) {
         next unless @bugs;
 
         foreach my $bug (@bugs) {
+            next if $bugs_seen->{ $bug->{id} };
+
             say colored( "Looking at bug $bug->{id}.", 'yellow' )
               if $opt->verbose > 1;
 
@@ -128,6 +131,7 @@ for my $s (qw( critical blocker )) {
 
                 $bug->{history} = \@history_to_keep;
                 push( @bugs_to_keep, $bug );
+                $bugs_seen->{ $bug->{id} } = 1;
 
                 my $json_data = {
                     "attachments" => [

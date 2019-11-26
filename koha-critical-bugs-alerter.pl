@@ -155,22 +155,21 @@ for my $s (qw( critical blocker )) {
     }
 }
 
+
+my $vars = {
+    bugs        => \@bugs_to_keep,
+    bz_koha_url => $bz_koha_url,
+};
+$tt->process( 'email.tt', $vars, 'email.html' ) || die $tt->error(), "\n";
+qx{ tidy -o email.html email.html };
+my $html = read_file('email.html');
+
 if (   $opt->mailgun_api_key
     && $opt->mailgun_api_domain
     && $opt->email_to
     && $opt->email_from )
 {
     say colored("Sending email!", 'cyan') if $opt->verbose > 1;
-
-    my $vars = {
-        bugs        => \@bugs_to_keep,
-        bz_koha_url => $bz_koha_url,
-    };
-
-    $tt->process( 'email.tt', $vars, 'email.html' )
-      || die $tt->error(), "\n";
-    qx{ tidy -o email.html email.html };
-    my $html = read_file('email.html');
 
     my $mailgun = WebService::Mailgun->new(
         api_key => $opt->mailgun_api_key,

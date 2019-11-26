@@ -8,8 +8,8 @@
             [% IF h.changes.size -%]
                     [% FOREACH c IN h.changes -%]
                         [% SET c_loop = loop %]
-                        [% IF h_loop.first && c_loop.first -%]
-                            [% SET last_bug_printed = b.id -%]
+                        [% UNLESS bug_title_printed -%]
+                            [% SET bug_title_printed = 1 -%]
                             <h3><a href="[% bz_koha_url %]/show_bug.cgi?id=[% b.id %]">Bug [% b.id %]: [% b.summary %]</a></h3>
                             <p>
                         [% END -%]
@@ -29,4 +29,5 @@
             [% END -%]
         [% END -%]
     [% END -%]
+    [% SET bug_title_printed = 0 -%]
 [% END -%]

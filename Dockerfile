@@ -13,4 +13,4 @@ RUN apt-get -y update \
     && rm -rf /var/cache/apt/archives/* \
     && rm -rf /var/lib/api/lists/*
 
-CMD ./koha-critical-bugs-alerter.pl -v
+CMD ./koha-critical-bugs-alerter.pl -v -v
